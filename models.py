@@ -23,7 +23,7 @@ class User(db.Model):
     date_created = db.Column(db.Date, nullable=False, default=date.today)
 
     @validates('email')
-    def validate_email(self, email):
+    def validate_email(self, key, email):
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             raise ValueError("Invalid email address")
         return email
@@ -98,9 +98,10 @@ class Todo(db.Model):
     date_created = db.Column(db.Date, nullable=False, default=date.today)
 
     @validates('content')
-    def validate_content(self, content):
+    def validate_content(self, key, content):
         if len(content) < 10:
             raise ValueError("Content must be at least 10 characters long")
+        return content
 
     # Foreign key to User
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)

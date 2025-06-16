@@ -6,6 +6,7 @@ from flask_cors import CORS
 import cloudinary, cloudinary.uploader
 from datetime import timedelta
 
+
 app = Flask(__name__)
 
 app.config ['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
@@ -42,24 +43,30 @@ def index():
 @app.route('/todo', methods=['POST'])
 @jwt_required()
 def create_task():
-    current_user_id = get_jwt_identity()
     data = request.get_json()
+    print("Received data:", data)
 
-    if not data or not data.get('content'):
-        return make_response(jsonify({'error': 'Content is required!'}), 400)
+    retrived_content = data.get('content')
+    print("Retrived data:", retrived_content)
+    
+    if not retrived_content:
+        return jsonify({"error": "Content is required"}), 400
 
-    new_task = Todo(content=data['content'], user_id=current_user_id)
+    current_user_id = int(get_jwt_identity())
+    print("user id:", current_user_id)
+    
 
+    new_task = Todo(content=retrived_content, user_id=current_user_id)
+    print("New task:", new_task)
     db.session.add(new_task)
     db.session.commit()
 
     return jsonify(new_task.to_dict()), 201
- 
 #-------------------get all tasks----------------
 @app.route('/todo', methods=["GET"])
 @jwt_required()
 def get_all_tasks():
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
 
     # Only fetch tasks created by the logged-in user
     tasks = Todo.query.filter_by(user_id=current_user_id).all()
@@ -71,8 +78,10 @@ def get_all_tasks():
 @app.route('/todo/<int:id>', methods=["GET"])
 @jwt_required()
 def get_task_by_id(id):
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
+    print("Current user:",current_user_id)
     task = Todo.query.get_or_404(id)
+    print("Task", task)
 
     if task.user_id != current_user_id:
         return make_response(jsonify({"error": "Unauthorized access"}), 403)
@@ -83,7 +92,7 @@ def get_task_by_id(id):
 @app.route('/todo/<int:id>', methods=["PUT", "PATCH"])
 @jwt_required()
 def update_task(id):
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
 
     # get task to update
     task = Todo.query.get_or_404(id)
@@ -106,7 +115,7 @@ def update_task(id):
 @app.route('/todo/<int:id>', methods=["DELETE"])
 @jwt_required()
 def delete_task(id):
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
 
     # Fetch the task by its ID
     task = Todo.query.get_or_404(id)
@@ -145,14 +154,6 @@ def create_user():
         'user': new_user.to_dict()
     }), 201)
 
-#---------------------get user---------------------
-@app.route('/user', methods=['GET'])
-def get_users():
-    users = User.query.all()
-    if not users:
-        return make_response(jsonify({'error' : 'No users found'}), 400)
-    response = [user.to_dict() for user in users]
-    return make_response(jsonify(response), 200)
     
 #---------------------login user--------------------
 @app.route('/login', methods=['POST'])
@@ -182,7 +183,7 @@ def login():
 @app.route('/upload_profile_pic', methods=['POST'])
 @jwt_required()
 def upload_profile_picture():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     profile = Profile.query.filter_by(user_id=user_id).first()
 
     if 'image' not in request.files:
@@ -205,7 +206,7 @@ def upload_profile_picture():
 @app.route('/profile/', methods=['GET'])
 @jwt_required() 
 def get_profile():
-    current_user_id = get_jwt_identity() 
+    current_user_id = int(get_jwt_identity()) 
 
     profile = Profile.query.filter_by(user_id=current_user_id).first()
     if not profile:
@@ -216,7 +217,7 @@ def get_profile():
 @app.route('/profile', methods=['POST'])
 @jwt_required()
 def create_profile():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     data = request.get_json()
     if not data:
@@ -248,7 +249,7 @@ def create_profile():
 @app.route('/profile', methods=['PUT', 'PATCH'])
 @jwt_required()
 def update_profile():
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
 
     data = request.get_json()
 
@@ -277,7 +278,7 @@ def update_profile():
 @app.route('/profile', methods=['DELETE'])
 @jwt_required()
 def delete_profile():
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     profile = Profile.query.filter_by(user_id=current_user_id).first()
 
     if not profile:
@@ -289,7 +290,7 @@ def delete_profile():
     return make_response(jsonify({'message': 'Profile deleted successfully'}), 200)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
 
 
 
